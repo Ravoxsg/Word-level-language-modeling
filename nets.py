@@ -78,9 +78,11 @@ class SimpleLSTM(nn.Module):
     def sample_mask(self):
 
         keep = 1.0 - self.rec_dropout
-        self.mask = Variable(torch.bernoulli(torch.Tensor(self.latent_size).fill_(keep)))
+        self.mask = [Variable(torch.bernoulli(torch.Tensor(self.nhid).fill_(keep)))
+                    for l in range(self.num_layers)]
         if self.cud:
-            self.mask = self.mask.cuda()
+            self.mask = [Variable(torch.bernoulli(torch.Tensor(self.nhid).fill_(keep))).cuda()
+                            for l in range(self.num_layers)]
 
 
     def forward_fc(self, x, hidden):
@@ -99,7 +101,7 @@ class SimpleLSTM(nn.Module):
 
         if self.var_rnn:
             for l in range(self.num_layers):
-                hidden[0][l].data.set_(torch.mul(hidden[0][l], self.mask).data)
+                hidden[0][l].data.set_(torch.mul(hidden[0][l], self.mask[l]).data)
                 hidden[0][l].data *= 1.0/(1.0 - self.rec_dropout)
 
         m = torch.mean(output)
